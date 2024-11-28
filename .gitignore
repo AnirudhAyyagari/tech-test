@@ -1,0 +1,5 @@
+logs/
+dbt_packages/
+target/
+.DS_Store
+.user.yml

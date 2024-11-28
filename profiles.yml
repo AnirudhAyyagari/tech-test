@@ -1,0 +1,22 @@
+tracksuit_data_technical_test:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: database-1.cji48ooyyih5.us-east-1.rds.amazonaws.com 
+      user: postgres
+      password: "{{ env_var('database_password') }}"
+      port: 5432
+      dbname: postgres
+      schema: datamartsq
+      threads: 4
+
+    prod:
+      type: postgres
+      host: database-1.cji48ooyyih5.us-east-1.rds.amazonaws.com 
+      user: postgres
+      password: "{{ env_var('database_password') }}"
+      port: 5432
+      dbname: postgres
+      schema: datamartsp
+      threads: 4

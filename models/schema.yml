@@ -1,0 +1,150 @@
+version: 2
+
+models:
+
+  - name: int_brand_information
+    description: "Intermediate table that combines survey data with brand information, providing brand details alongside survey responses."
+    columns:
+      - name: brand_id
+        description: "Unique identifier for each brand, as derived from the survey data and brand information."
+      - name: brand_name
+        description: "The name of the brand, as selected in the survey data."
+        data_data_tests:
+          - not_null
+      - name: country
+        description: "The country where the brand's headquarters is located, as per the brand information."
+      - name: city
+        description: "The city where the brand's headquarters is located, as per the brand information."
+      - name: brand_tier
+        description: "The tier or classification of the brand, as defined in the brand information."
+
+  - name: int_brand_respondent_weight
+    description: "Model for calculating brand respondent weight by month"
+    columns:
+    - name: brand_id
+      description: "ID of the selected brand"
+    - name: start_of_month
+      description: "Truncated month from survey month"
+      data_data_tests:
+        - not_null
+    - name: brand_total_respondent_weight
+      description: "Total respondent weight for the brand"
+      data_data_tests:
+        - not_null
+
+  - name: int_total_respondent_weight
+    description: "Model for calculating total respondent weight by month"
+    columns:
+    - name: start_of_month
+      description: "Truncated month from survey month"
+      data_data_tests:
+        - not_null
+    - name: total_respondent_weight
+      description: "Total respondent weight for all brands"
+      data_data_tests:
+        - not_null
+        - dbt_utils.accepted_range:
+            min_value: 0  # Ensure no negative weights
+
+  - name: dim_category
+    description: "Dimension table containing information about various categories, with unique identifiers and category names."
+    columns:
+    - name: category_id
+      description: Unique identifier for each category.
+    - name: category_name
+      description: The name of the category.
+
+  - name: dim_question
+    description: "Dimension table that holds data about different question types used in surveys, including unique identifiers and question types."
+    columns:
+    - name: question_id
+      description: Unique identifier for each question type.
+    - name: question_type
+      description: The type of the question.
+
+  - name: dim_date
+    description: "This model creates a date dimension table from survey data, extracting and formatting date components."
+    columns:
+      - name: date_key
+        description: "A unique integer key for each date in YYYYMMDD format."
+        data_tests:
+          - not_null
+      - name: survey_month
+        description: "The original date value"
+      - name: Date
+        description: "The day component of the date (1-31)."
+      - name: Month
+        description: "The month component of the date (1-12)."
+      - name: Year
+        description: "The year component of the date."
+      - name: Quarter
+        description: "The quarter of the year (1-4)."
+      - name: Week
+        description: "The week number of the year (1-52)."
+      - name: Day_of_Week
+        description: "The day of the week (0-6, where 0=Sunday)."
+
+  - name: dim_respondent
+    description: "Dimension table containing data on respondents, with unique identifiers for each respondent."
+    columns:
+    - name: respondent_id
+      description: Unique identifier for each respondent.
+
+  - name: fact_brand
+    description: "Fact table that captures brand-related metrics, including brand identifiers, respondent information, and weights for analytical purposes."
+    columns:
+    - name: brand_id
+      description: Unique identifier for the brand.
+    - name: respondent_id
+      description: Unique identifier for the respondent.
+    - name: respondent_weight
+      description: Weight assigned to a respondent based on priority or importance.
+    - name: category_id
+      description: Unique identifier for the category.
+    - name: date_key
+      description: Surrogate key linking to the date dimension.
+
+  - name: fact_brand_summary
+    description: "Aggregated fact table summarizing brand awareness metrics, including awareness percentages and rolling averages over a three-month period."
+    columns:
+    - name: id
+      description: Unique identifier for the summary fact table.
+    - name: brand_id
+      description: Unique identifier for the brand.
+    - name: date_key
+      description: Surrogate key linking to the date dimension.
+    - name: awareness_percentage
+      description: Percentage of respondents aware of the brand.
+      data_tests:
+        - dbt_utils.accepted_range:
+            min_value: 0  # Ensure no negative percentages
+            max_value: 100  # Ensure percentages don't exceed 100
+    - name: rolling_avg_3_months
+      description: "Three-month rolling average of brand awareness."
+      data_tests:
+        - not_null
+
+snapshots:
+  - name: dim_brand_snapshot
+    description: "Snapshot table containing historical details about different brands, including unique identifiers, brand names, and other key attributes. This snapshot tracks changes over time in brand information."
+    columns:
+      - name: brand_id
+        description: "Unique identifier for each brand. This serves as the primary key in the dimension table."
+        data_data_tests:
+          - unique
+      - name: brand_name
+        description: "The name of the brand. This field represents the official brand name as recorded."
+        data_data_tests:
+          - not_null
+      - name: city
+        description: "The city where the brand's headquarters is located. This is derived from the 'headquarters_location' field."
+      - name: country
+        description: "The country where the brand's headquarters is located. This is derived from the 'headquarters_location' field."
+      - name: brand_tier
+        description: "The tier or level of the brand, indicating its market position (e.g., premium, mid-range, budget)."
+      - name: brand_hash
+        description: "A hash value representing a combination of key brand attributes. This is used to efficiently track changes in the snapshot."
+      - name: dbt_valid_from
+        description: "The timestamp indicating when this version of the record became valid."
+      - name: dbt_valid_to
+        description: "The timestamp indicating when this version of the record was replaced by a newer version. Null if the record is currently valid."

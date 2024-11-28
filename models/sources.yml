@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: survey_data
+    database: postgres
+    schema: datamartsp
+    tables:
+      - name: raw_survey_data
+      - name: raw_respondent_demographics
+      - name: raw_brand_information
